@@ -1,0 +1,25 @@
+/* src/components/WorldMap.css */
+.container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+  }
+  
+  .country-info {
+    width: 30%; /* Adjust the width as needed */
+    background-color: #e0e0e0; /* Change the background color */
+    color: #333; /* Change the text color */
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; /* Ensure content is scrollable if it overflows */
+    display: flex;
+    flex-direction: column;
+    justify-content: baseline; /* Center vertically */
+    text-align: center; /* Center text horizontally */
+  }
+  
+  .map-container {
+    width: 70%; /* Adjust the width as needed */
+    height: 100vh;
+  }
+  
