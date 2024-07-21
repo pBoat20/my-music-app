@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
-import './WorldMap.css';
+import '../styles/styles.css'
+import CountryInfo from './CountryInfo';
 
 // Changes the name of United States to USA for api use
 const freedomCatcher = {
@@ -76,25 +77,11 @@ const WorldMap = () => {
   };
 
   return (
-    <div className="container">
-      <div className="country-info">
-        {error && <p className="error-message">{error}</p>}
-        {countryInfo ? (
-          <>
-            <h2>{countryInfo.name}</h2>
-            {countryInfo.tracks && (
-              <ol>
-                {countryInfo.tracks.map((track, index) => (
-                  <li key={index}>{track.track_name}</li>
-                ))}
-              </ol>
-            )}
-          </>
-        ) : (
-          <p>Click on a country to see the information.</p>
-        )}
+    <div className="flex h-screen w-screen">
+      <div className = "w-1/3 h-screen overflow-y-auto bg-slate-50">
+        <CountryInfo error={error} countryInfo={countryInfo} />
       </div>
-      <div className="map-container">
+      <div className="w-2/3 border border-gray-300 shadow-lg">
         {geoData && (
           <MapContainer style={{ height: '100vh', width: '100%' }} zoom={2} center={[20, 0]}>
             <TileLayer

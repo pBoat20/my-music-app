@@ -63,6 +63,19 @@ app.get('/api/top-tracks/:countryName', async (req, res) => {
   }
 });
 
+app.get('/test', async (req, res) => {
+  const db = mongodb.getDb()
+  const countryName = 'Brazil';
+
+  try {
+    const tracks = await mongodb.getTracksByCountry(db, countryName);
+    console.log(tracks);
+    //res.json(tracks);
+  } catch (error){
+    res.status(500).json({ error: 'Failed to fetch tracks' });
+  }
+})
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');

@@ -1,0 +1,11 @@
+.hover-image {
+    background-image: url('../assets/kitten.jpeg');
+    background-size: cover;
+    transition: background-image 0.3s ease-in-out;
+  }
+  
+  .hover-image:hover {
+    background-image: url('../assets/PlayButton.png');
+    background-size: cover;
+  }
+  
