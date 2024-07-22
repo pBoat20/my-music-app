@@ -54,6 +54,8 @@ async function getPlaylistTracks(playlistId, token) {
                 track_name: item.track.name,
                 artist_names: item.track.artists.map(artist => artist.name).join(', '),
                 spotify_track_id: item.track.id,
+                album_cover_url: item.track.album.images[0].url,
+                preview_url: item.track.preview_url,
                 date_entered: dateEntered
             };
         }).slice(0,10); //set limit to 10
@@ -63,8 +65,22 @@ async function getPlaylistTracks(playlistId, token) {
     }
 }
 
+async function fetchTrackData(token, trackId){
+    try {
+        const trackData = await axios.get(`https://api.spotify.com/v1/tracks/${trackId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+        });
+        return trackData;
+    } catch (error){
+        console.error('Error fetching the track data');
+    }
+}
+
 module.exports = {
     getAccessToken,
     getPlaylistTracks,
-    searchForPlaylists
+    searchForPlaylists,
+    fetchTrackData
 }

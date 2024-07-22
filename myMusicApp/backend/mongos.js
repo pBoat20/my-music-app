@@ -87,7 +87,7 @@ async function isCollectionEmpty(mongodb, country) {
 async function getTracksByCountry(mongodb, country){
   const collection = mongodb.collection(country);
 
-  const tracks = await collection.find({}, {projection: { track_name: 1, artist_names: 1, spotify_track_id: 1, _id: 0 } }).toArray();
+  const tracks = await collection.find({}, {projection: { track_name: 1, artist_names: 1, spotify_track_id: 1, album_cover_url: 1, preview_url: 1, _id: 0 } }).toArray();
   //console.log(tracks);
 
   return tracks;

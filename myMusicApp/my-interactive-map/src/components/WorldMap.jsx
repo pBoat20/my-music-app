@@ -16,6 +16,7 @@ const WorldMap = () => {
   const [countryInfo, setCountryInfo] = useState(null);
   const [error, setError] = useState(null);
   const geoJsonRef = useRef();
+  const [trackData, setTrackData] = useState(null);
 
   useEffect(() => {
     // Fetch GeoJSON data for the world map
