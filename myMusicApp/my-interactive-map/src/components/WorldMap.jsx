@@ -13,10 +13,10 @@ const freedomCatcher = {
 // Builds the World map Component
 const WorldMap = () => {
   const [geoData, setGeoData] = useState(null);
-  const [countryInfo, setCountryInfo] = useState(null);
+  const [countryInfo, setCountryInfo] = useState({ name: "Click a Country!" });
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const geoJsonRef = useRef();
-  const [trackData, setTrackData] = useState(null);
 
   useEffect(() => {
     // Fetch GeoJSON data for the world map
@@ -65,6 +65,7 @@ const WorldMap = () => {
     const preCountryName = country.properties.admin;
     const countryName = freedomCatcher[preCountryName] || preCountryName;
     setCountryInfo({ name: countryName });
+    setLoading(true);
 
     // Call to fetch top tracks from the clicked county
     axios.get(`/api/top-tracks/${countryName}`)
@@ -73,14 +74,18 @@ const WorldMap = () => {
           ...prevState,
           tracks: response.data,
         }));
+        setLoading(false);
       })
-      .catch((error) => setError(error.message));
+      .catch((error) => {
+      setError(error.message);
+      setLoading(false);
+    });
   };
 
   return (
     <div className="flex h-screen w-screen">
       <div className = "w-1/3 h-screen overflow-y-auto bg-slate-50">
-        <CountryInfo error={error} countryInfo={countryInfo} />
+        <CountryInfo error={error} countryInfo={countryInfo} loading={loading}/>
       </div>
       <div className="w-2/3 border border-gray-300 shadow-lg">
         {geoData && (
