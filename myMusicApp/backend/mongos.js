@@ -93,6 +93,12 @@ async function getTracksByCountry(mongodb, country){
   return tracks;
 }
 
+async function getAvailableCountries(mongodb){
+  const collections = await mongodb.listCollections().toArray();
+
+  return collections.map(collection => collection.name);
+}
+
 module.exports = {
     connectToServer,
     getDb,
@@ -100,5 +106,6 @@ module.exports = {
     checkTimeStamps,
     replaceTracks,
     isCollectionEmpty,
-    getTracksByCountry
+    getTracksByCountry,
+    getAvailableCountries
 }

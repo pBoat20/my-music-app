@@ -1,8 +1,14 @@
 const mongodb = require('./mongos');
 const { searchForPlaylists, getPlaylistTracks } = require('./spotifys');
 
-const countries = ['USA', 'Canada', 'Japan', 'Mexico', 'Brazil'];
-
+const countries = ['Global', 'USA', 'Canada', 'Japan', 'Mexico', 'Brazil', 'France', 'Colombia', 'Spain',
+'United Kingdom', 'Philippines', 'Argentina', 'Israel', 'China', 'Dominican Republic',
+'Germany', 'Poland', 'Netherlands', 'Guatemala', 'South Korea', 'Chile',
+'Indonesia', 'India', 'Taiwan', 'Honduras', 'Russia', 'Portugal', 'Venezuela', 'Turkey',
+'Australia', 'Norway', 'Sweden', 'Greece', 'Peru', 'Uruguay', 'Thailand', 'Vietnam', 'Morocco',
+'Paraguay', 'Ukraine', 'Nigeria', 'Denmark', 'Hungary', 'Bulgaria', 'El Salvador',
+'Finland', 'Ecuador', 'South Africa', 'Belgium', 'Ireland', 'Costa Rica',
+'Bolivia', 'Egypt', 'Malaysia'];
 
 async function loadDb(token, db) {
     for(let country of countries){
@@ -34,8 +40,32 @@ async function loadDb(token, db) {
     }
 }
 
+async function rawUpdate(token, db){
+    const collections = await mongodb.getAvailableCountries(db);
+    console.log(collections);
 
+    for(let country of countries){
+        const countryPlaylist = `Top 50 - ${country}`;
+        const playlistId = await searchForPlaylists(countryPlaylist, token);
+        var tracks = '';
+
+        if(playlistId) {
+            tracks = await getPlaylistTracks(playlistId, token);    
+        }
+
+        try{
+            if(collections.includes(country)){
+                await mongodb.replaceTracks(db, country, tracks);
+            } else {
+                await mongodb.insertTracks(db, country, tracks);
+        }
+        } catch(error){
+            console.error(error);
+        }   
+    }
+}
 
 module.exports = {
     loadDb,
+    rawUpdate
 }

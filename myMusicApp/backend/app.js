@@ -2,7 +2,7 @@ const express = require('express')
 const cors = require('cors');
 const mongodb = require('./mongos');
 
-const { loadDb } = require('./dataLoading');
+const { loadDb, rawUpdate } = require('./dataLoading');
 const { getAccessToken, fetchTrackData, getPlaylistTracks, searchForPlaylists } = require('./spotifys');
 
 const app = express();
@@ -79,22 +79,13 @@ app.get('/api/top-tracks/:countryName', async (req, res) => {
 });
 
 app.get('/test', async (req, res) => {
-  const db = mongodb.getDb()
-  const countryName = 'Japan';
-
-  const countryPlaylist = `Top 50 - ${countryName}`;
-  const playlistId = await searchForPlaylists(countryPlaylist, token);
-  var tracks = '';
-
-  if(playlistId) {
-      tracks = await getPlaylistTracks(playlistId, token);    
-  }
+  const db = mongodb.getDb();
 
   try {
-    await mongodb.replaceTracks(db, countryName, tracks)
+    await rawUpdate(token, db);
     res.sendStatus(200);
   } catch (error){
-    res.status(500).json({ error: 'Failed to fetch tracks' });
+    res.status(500).json({ error: 'Failed to insert tracks' });
   }
 })
 
