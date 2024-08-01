@@ -1,10 +1,9 @@
-/* src/App.css */
 body, html, #root, .App {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  background-color: dimgrey;
+  background-color: rgb(192,192,192);
 }
 
 .App {

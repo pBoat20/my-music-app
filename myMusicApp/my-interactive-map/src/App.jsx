@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from 'react';
 import WorldMap from './components/WorldMap';
 import './App.css';

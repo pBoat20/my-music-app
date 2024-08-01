@@ -1,4 +1,3 @@
-
 const { MongoClient } = require('mongodb');
 
 const uri = "mongodb+srv://tonylgarza3532:zW7egZalUusn8wyF@regionalmusic.cn2wuse.mongodb.net/?retryWrites=true&w=majority&appName=RegionalMusic"; 
@@ -39,9 +38,9 @@ async function insertTracks(mongodb, country, tracks) {
   }
 }
 
+//Checks tracks entry timestamps
 async function checkTimeStamps(mongodb, country){
   const collection = mongodb.collection(country);
-  //findOne modifier to search for only the date_entered in each item
   const options = {
     projection: { date_entered: 1, _id: 0}
   }
@@ -54,6 +53,7 @@ async function checkTimeStamps(mongodb, country){
   }
 }
 
+//Deletes tracks from a collection
 async function deleteExistingTracks(mongodb, country){
   try {
       const result = await mongodb.collection(country).deleteMany({});
@@ -63,11 +63,13 @@ async function deleteExistingTracks(mongodb, country){
   }
 };
 
+//Replaces tracks if ones already exist in a collection
 async function replaceTracks(mongodb, country, newTracks) {
   await deleteExistingTracks(mongodb, country);
   await insertTracks(mongodb, country, newTracks);
 }
 
+//Checks a collection to see if its empty
 async function isCollectionEmpty(mongodb, country) {
   const collection = mongodb.collection(country);
 
@@ -87,10 +89,66 @@ async function isCollectionEmpty(mongodb, country) {
 async function getTracksByCountry(mongodb, country){
   const collection = mongodb.collection(country);
 
-  const tracks = await collection.find({}, {projection: { track_name: 1, artist_names: 1, spotify_track_id: 1, album_cover_url: 1, preview_url: 1, _id: 0 } }).toArray();
+  const tracks = await collection.find({}, {projection: { track_name: 1, artist_names: 1, spotify_track_id: 1, album_cover_url: 1, preview_url: 1, track_url: 1, _id: 0 } }).toArray();
   //console.log(tracks);
 
   return tracks;
+}
+
+async function getGenresByCountry(mongodb, country) {
+  const collection = mongodb.collection(country);
+
+  const count = await collection.countDocuments();
+  //console.log(`Number of documents in ${country} collection:`, count);
+
+  const genresCursor = await collection.find({}, { projection: { artist_genres: 1, _id: 0 } });
+  const genreCounts = {};
+
+  //Splices and trims each document from collections into a neat string
+  await genresCursor.forEach(doc => {
+    if (Array.isArray(doc.artist_genres)) {
+      doc.artist_genres.forEach(genreString => {
+        const genres = genreString.split(',').map(genre => genre.trim());
+        genres.forEach(genre => {
+          if (genre && genre.trim()) {
+            if (genreCounts[genre]) {
+              genreCounts[genre]++;
+            } else {
+              genreCounts[genre] = 1;
+            }
+          }
+        });
+      });
+    } else if (typeof doc.artist_genres === 'string') {
+      const genres = doc.artist_genres.split(',').map(genre => genre.trim());
+      genres.forEach(genre => {
+        if (genre && genre.trim()) {
+          if (genreCounts[genre]) {
+            genreCounts[genre]++;
+          } else {
+            genreCounts[genre] = 1;
+          }
+        }
+      });
+    }
+  });
+
+  // Convert the genreCounts object to an array and sort by count in descending order
+  const sortedGenres = Object.entries(genreCounts)
+    .sort(([, countA], [, countB]) => countB - countA)
+    .map(([genre, count]) => ({ genre, count }));
+
+  return sortedGenres;
+}
+
+
+
+
+
+async function getAvailableCountries(mongodb){
+  const collections = await mongodb.listCollections().toArray();
+
+  return collections.map(collection => collection.name);
 }
 
 module.exports = {
@@ -100,5 +158,7 @@ module.exports = {
     checkTimeStamps,
     replaceTracks,
     isCollectionEmpty,
-    getTracksByCountry
+    getTracksByCountry,
+    getAvailableCountries,
+    getGenresByCountry
 }

@@ -2,15 +2,11 @@ const express = require('express')
 const cors = require('cors');
 const mongodb = require('./mongos');
 
-const { loadDb } = require('./dataLoading');
-const { getAccessToken, fetchTrackData, getPlaylistTracks, searchForPlaylists } = require('./spotifys');
+const { loadDb, forceUpdate } = require('./dataLoading');
+const { getAccessToken, fetchTrackData } = require('./spotifys');
 
 const app = express();
 const port = 3000;
-
-// Cache to keep the express server from having to recall certain functions to improve performance
-const cache = new Map();
-const CACHE_DURATION = 60 * 60 * 1000;
 
 const corsOptions = {
   origin: 'http://localhost:3000', 
@@ -20,6 +16,7 @@ app.use(cors(corsOptions));
 
 let token = null;
 
+//Sets the access Token
 const setAcessToken = async() => {
   try{
     token = await getAccessToken();
@@ -28,6 +25,7 @@ const setAcessToken = async() => {
   }
 }
 
+//Establishes connection and gets the spotify access token
 mongodb.connectToServer((err, db) => {
   if (err) {
       console.error(err);
@@ -41,6 +39,7 @@ mongodb.connectToServer((err, db) => {
   });
 });
 
+//Inserts tracks into mongoDB
 app.get('/insert', async (req, res) => {
   const db = mongodb.getDb();
 
@@ -65,6 +64,7 @@ app.get('/insert', async (req, res) => {
   }
 });
 
+//Used to get the top tracks in a country
 app.get('/api/top-tracks/:countryName', async (req, res) => {
   const db = mongodb.getDb()
   const countryName = req.params.countryName;
@@ -78,23 +78,16 @@ app.get('/api/top-tracks/:countryName', async (req, res) => {
   }
 });
 
-app.get('/test', async (req, res) => {
-  const db = mongodb.getDb()
-  const countryName = 'Japan';
-
-  const countryPlaylist = `Top 50 - ${countryName}`;
-  const playlistId = await searchForPlaylists(countryPlaylist, token);
-  var tracks = '';
-
-  if(playlistId) {
-      tracks = await getPlaylistTracks(playlistId, token);    
-  }
+// Route to force a track update
+// WARNING: CAUSES SPOTIFY API EXCEEDED DATA ERROR
+app.get('/force', async (req, res) => {
+  const db = mongodb.getDb();
 
   try {
-    await mongodb.replaceTracks(db, countryName, tracks)
+    await forceUpdate(token, db);
     res.sendStatus(200);
   } catch (error){
-    res.status(500).json({ error: 'Failed to fetch tracks' });
+    res.status(500).json({ error: 'Failed to insert tracks' });
   }
 })
 
@@ -115,19 +108,7 @@ app.get('/api/track/:id', async (req, res) => {
 // Route to get spotify album cover URL and song preview URL
 app.get('/api/spotify/:trackId', async (req, res) => {
   const trackId = req.params.trackId;
-  const accessToken = token;
 
-  /*
-  // Check if cache has the trackId data already
-  if (cache.has(trackId)) {
-    const cachedData = cache.get(trackId);
-    if (Date.now() - cachedData.timestamp < CACHE_DURATION) {
-      return res.json(cachedData.data);
-    } else {
-      cache.delete(trackId);
-    }
-  }
-  */
   // API call to spotify to get album coverURL and song preview URL
   try {
     console.log(`Fetching Spotify data for trackId: ${trackId}`);
@@ -145,6 +126,19 @@ app.get('/api/spotify/:trackId', async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+app.get('/api/genres/:countryName', async(req, res) => {
+  const db = mongodb.getDb();
+  const countryName = req.params.countryName;
+
+  try{
+    const genres = await mongodb.getGenresByCountry(db, countryName);
+    //console.log(genres);
+    res.json(genres);
+  }catch(error){
+    res.status(500).json({ error: 'Failed to fetch country genres' });
+  }  
+})
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
