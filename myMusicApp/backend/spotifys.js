@@ -5,6 +5,7 @@ const clientId = '5011c5f2cb99440ca24bcf86bb636f58';
 const clientSecret = '62b8b5a24f2946189e1d7253575e2488';
 
 // Function to get an access token using client credentials Flow
+// Taken from spotify
 async function getAccessToken() {
     const tokenUrl = 'https://accounts.spotify.com/api/token';
     const data = qs.stringify({ 'grant_type': 'client_credentials' });
@@ -50,6 +51,7 @@ async function searchForPlaylists(country, token) {
     }
 }
 
+// Get the genres of the artists
 async function getArtistGenres(artistId, token) {
     try {
         const response = await axios.get(`https://api.spotify.com/v1/artists/${artistId}`, {
@@ -106,7 +108,7 @@ async function getPlaylistTracks(playlistId, token) {
     }
 }
 
-
+// Get the data specific to individual tracks
 async function fetchTrackData(token, trackId){
     try {
         const trackData = await axios.get(`https://api.spotify.com/v1/tracks/${trackId}`, {

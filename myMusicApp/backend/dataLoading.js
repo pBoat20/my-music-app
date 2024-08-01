@@ -10,6 +10,7 @@ const countries = ['Global', 'USA', 'Canada', 'Japan', 'Mexico', 'Brazil', 'Fran
 'Finland', 'Ecuador', 'South Africa', 'Belgium', 'Ireland', 'Costa Rica',
 'Bolivia', 'Egypt', 'Malaysia'];
 
+//Loads the DB and attempts to not exceed spotify API
 async function loadDb(token, db) {
     const now = new Date();
     const dateEntered = now.toDateString();
@@ -53,6 +54,7 @@ async function loadDb(token, db) {
     }
 }
 
+//Force a full database refresh
 async function forceUpdate(token, db){
     const collections = await mongodb.getAvailableCountries(db);
     console.log(collections);

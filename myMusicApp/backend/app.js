@@ -1,17 +1,12 @@
 const express = require('express')
 const cors = require('cors');
-const axios = require('axios');
 const mongodb = require('./mongos');
 
 const { loadDb, forceUpdate } = require('./dataLoading');
-const { getAccessToken, fetchTrackData, getPlaylistTracks, searchForPlaylists, fetchArtistGenre } = require('./spotifys');
+const { getAccessToken, fetchTrackData } = require('./spotifys');
 
 const app = express();
 const port = 3000;
-
-// Cache to keep the express server from having to recall certain functions to improve performance
-const cache = new Map();
-const CACHE_DURATION = 60 * 60 * 1000;
 
 const corsOptions = {
   origin: 'http://localhost:3000', 
@@ -21,6 +16,7 @@ app.use(cors(corsOptions));
 
 let token = null;
 
+//Sets the access Token
 const setAcessToken = async() => {
   try{
     token = await getAccessToken();
@@ -29,6 +25,7 @@ const setAcessToken = async() => {
   }
 }
 
+//Establishes connection and gets the spotify access token
 mongodb.connectToServer((err, db) => {
   if (err) {
       console.error(err);
@@ -42,6 +39,7 @@ mongodb.connectToServer((err, db) => {
   });
 });
 
+//Inserts tracks into mongoDB
 app.get('/insert', async (req, res) => {
   const db = mongodb.getDb();
 
@@ -66,6 +64,7 @@ app.get('/insert', async (req, res) => {
   }
 });
 
+//Used to get the top tracks in a country
 app.get('/api/top-tracks/:countryName', async (req, res) => {
   const db = mongodb.getDb()
   const countryName = req.params.countryName;
@@ -79,6 +78,8 @@ app.get('/api/top-tracks/:countryName', async (req, res) => {
   }
 });
 
+// Route to force a track update
+// WARNING: CAUSES SPOTIFY API EXCEEDED DATA ERROR
 app.get('/force', async (req, res) => {
   const db = mongodb.getDb();
 
@@ -126,20 +127,17 @@ app.get('/api/spotify/:trackId', async (req, res) => {
   }
 });
 
-app.get('/analyze', async(req, res) => {
-  const data = await getPlaylistTracks("37i9dQZEVXbLRQDuF5jeBp", token);
-  //const data = await fetchArtistGenre(token, "74KM79TiuVKeVCqs8QtB0B");
-
-  res.json(data);
-});
-
-app.get('/genres', async(req, res) => {
+app.get('/api/genres/:countryName', async(req, res) => {
   const db = mongodb.getDb();
+  const countryName = req.params.countryName;
 
-  const genres = await mongodb.getGenresByCountry(db, 'USA');
-
-  console.log(genres);
-  res.json(genres);
+  try{
+    const genres = await mongodb.getGenresByCountry(db, countryName);
+    //console.log(genres);
+    res.json(genres);
+  }catch(error){
+    res.status(500).json({ error: 'Failed to fetch country genres' });
+  }  
 })
 
 app.use((err, req, res, next) => {

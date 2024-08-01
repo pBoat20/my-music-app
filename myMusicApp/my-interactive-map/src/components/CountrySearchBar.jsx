@@ -4,6 +4,7 @@ const CountrySearchBar = ({ countries, onSelectCountry }) => {
   const [query, setQuery] = useState('');
   const [filteredCountries, setFilteredCountries] = useState([]);
 
+  //Handles the typed input, only shows countries that are available in the list with data
   const handleInputChange = (event) => {
     const value = event.target.value;
     setQuery(value);
@@ -18,6 +19,7 @@ const CountrySearchBar = ({ countries, onSelectCountry }) => {
     }
   };
 
+  //Handles selecting the country
   const handleSelect = (country) => {
     setQuery(country);
     setFilteredCountries([]);

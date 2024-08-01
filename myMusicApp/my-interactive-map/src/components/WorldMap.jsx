@@ -4,8 +4,9 @@ import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
 import '../styles/styles.css'
 import CountryInfo from './CountryInfo';
+import CountryGenres from './CountryGenres';
 import CountrySearchBar from './CountrySearchBar';
-import SearchControl from './SearchControl';
+import { ToggleButton } from './Switch';
 
 // Changes the name of United States to USA for api use
 const freedomCatcher = {
@@ -22,14 +23,13 @@ const specialCountries = ['Global', 'USA', 'Canada', 'Japan', 'Mexico', 'Brazil'
   'Finland', 'Ecuador', 'South Africa', 'Belgium', 'Ireland', 'Costa Rica',
   'Bolivia', 'Egypt', 'Malaysia'];
   
-
-  
-
 // Builds the World map Component
 const WorldMap = () => {
   const [geoData, setGeoData] = useState(null);
   const [countryInfo, setCountryInfo] = useState({ name: 'Global', tracks: [] });
+  const [countryGenres, setCountryGenres] = useState({ name: 'Global', genres: []});
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState('info');
   const [loading, setLoading] = useState(false);
   const geoJsonRef = useRef();
 
@@ -59,6 +59,19 @@ const WorldMap = () => {
         setError(error.message);
         setLoading(false);
       });
+
+      axios.get('/api/genres/Global')
+      .then((response) => {
+        setCountryGenres(prevState => ({
+          ...prevState,
+          genres: response.data,
+        }));
+        setLoading(false);
+      })
+      .catch((error) => {
+        setError(error.message);
+        setLoading(false);
+      }); 
   }, []);
 
   //Highlights country when scrolled over
@@ -111,7 +124,10 @@ const WorldMap = () => {
 
           div.onclick = function() {
             setCountryInfo({name: 'Global'});
+            setCountryGenres({name: 'Global'});
             setLoading(true);
+
+            //Get tracks
             axios.get('/api/top-tracks/Global')
             .then((response) => {
               setCountryInfo(prevState => ({
@@ -124,6 +140,20 @@ const WorldMap = () => {
               setError(error.message);
               setLoading(false);
             });
+
+            //Get Genres
+            axios.get('/api/genres/Global')
+            .then((response) => {
+              setCountryGenres(prevState => ({
+                ...prevState,
+                genres: response.data,
+              }));
+              setLoading(false);
+            })
+            .catch((error) => {
+              setError(error.message);
+              setLoading(false);
+            }); 
           };
 
           return div;
@@ -148,11 +178,12 @@ const WorldMap = () => {
     const preCountryName = country.properties.admin;
     const countryName = freedomCatcher[preCountryName] || preCountryName;
     setCountryInfo({ name: countryName });
+    setCountryGenres({ name: countryName });
     setLoading(true);
 
     // Call to fetch top tracks from the clicked county
     axios.get(`/api/top-tracks/${countryName}`)
-      .then((response) => {  // Corrected the variable scoping here
+      .then((response) => {
         setCountryInfo(prevState => ({
           ...prevState,
           tracks: response.data,
@@ -163,6 +194,21 @@ const WorldMap = () => {
       setError(error.message);
       setLoading(false);
     });
+
+    
+    //Get Genres
+    axios.get(`/api/genres/${countryName}`)
+      .then((response) => {
+        setCountryGenres(prevState => ({
+          ...prevState,
+          genres: response.data,
+        }));
+        setLoading(false);
+      })
+      .catch((error) => {
+        setError(error.message);
+        setLoading(false);
+      }); 
   };
 
   //Determines the color of the country based on if it has data or not
@@ -177,8 +223,12 @@ const WorldMap = () => {
     };
   };
 
+  //Handles country search
   const handleCountrySelect = (countryName) => {
     setCountryInfo({ name: countryName });
+    setCountryGenres({ name: countryName });
+
+    //get tracks
     axios.get(`/api/top-tracks/${countryName}`)
       .then((response) => {
         setCountryInfo(prevState => ({
@@ -191,12 +241,39 @@ const WorldMap = () => {
         setError(error.message);
         setLoading(false);
       });
+
+      
+      //Get genres
+      axios.get(`/api/genres/${countryName}`)
+      .then((response) => {
+        setCountryGenres(prevState => ({
+          ...prevState,
+          genres: response.data,
+        }));
+        setLoading(false);
+      })
+      .catch((error) => {
+        setError(error.message);
+        setLoading(false);
+      }); 
+  };
+
+  //Changes between tracklist and genres
+  const toggleViewMode = () => {
+    setViewMode(viewMode === 'info' ? 'genres' : 'info');
   };
 
   return (
     <div className="flex h-screen w-screen">
-      <div className = "w-1/3 h-screen overflow-y-auto">
-        <CountryInfo error={error} countryInfo={countryInfo} loading={loading}/>
+      <div className="w-1/3 h-screen">
+        <div className="flex justify-center py-2">
+        <ToggleButton isOn={viewMode === 'info'} handleClick={toggleViewMode} />
+        </div>
+        {viewMode === 'info' ? (
+          <CountryInfo error={error} countryInfo={countryInfo} loading={loading} />
+        ) : (
+          <CountryGenres error={error} countryGenres={countryGenres} loading={loading}/>
+        )}
       </div>
       <div className="w-2/3 border border-gray-300 shadow-lg">
         {geoData && (
