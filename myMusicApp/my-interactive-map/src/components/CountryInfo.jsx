@@ -30,13 +30,13 @@ const CountryInfo = ({ error, countryInfo, loading }) => {
         return <div className="text-center font-bold font-sans py-6">Loading Track List...</div>;
     }
 
-    if (!countryInfo.tracks) {
-        return <div className="h-full p-6">{countryInfo.name}</div>;
+    if (!countryInfo.tracks || countryInfo.tracks.length === 0) {
+      return <div className="h-full p-6 py-6 text-center font-bold font-sans">No Track Data For {countryInfo.name}</div>;
     }
  
   return (
     <div className="h-full overflow-y-auto p-6">
-          <h2 className = "text-center font-bold font-sans"> Top 10 Tracks in {countryInfo.name}</h2>
+          <h2 className = "text-center font-bold font-sans"> Top {countryInfo.tracks.length} Tracks in {countryInfo.name}</h2>
           <p className="text-center text-sm font-medium font-sans"> Data from <img className="inline h-4 w-26" src={spotifyLogo}>
             </img>
           </p>
@@ -49,7 +49,16 @@ const CountryInfo = ({ error, countryInfo, loading }) => {
                     >
                     <img className="h-12 w-12 rounded-lg" src={track.album_cover_url} alt="" /> 
                     <div className="ml-3 overflow-hidden w-full">
-                        <p className="text-sm font-medium text-slate-900">{track.track_name}</p>
+                        <p className="text-sm font-medium text-slate-900">
+                          <a
+                          href={track.track_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                          >
+                          {track.track_name}
+                          </a>
+                        </p>
                         <p className="text-sm text-slate-700 truncate">{track.artist_names}</p>
                     </div>
                     {track.preview_url && (

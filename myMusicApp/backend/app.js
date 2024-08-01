@@ -1,9 +1,10 @@
 const express = require('express')
 const cors = require('cors');
+const axios = require('axios');
 const mongodb = require('./mongos');
 
-const { loadDb, rawUpdate } = require('./dataLoading');
-const { getAccessToken, fetchTrackData, getPlaylistTracks, searchForPlaylists } = require('./spotifys');
+const { loadDb, forceUpdate } = require('./dataLoading');
+const { getAccessToken, fetchTrackData, getPlaylistTracks, searchForPlaylists, fetchArtistGenre } = require('./spotifys');
 
 const app = express();
 const port = 3000;
@@ -78,11 +79,11 @@ app.get('/api/top-tracks/:countryName', async (req, res) => {
   }
 });
 
-app.get('/test', async (req, res) => {
+app.get('/force', async (req, res) => {
   const db = mongodb.getDb();
 
   try {
-    await rawUpdate(token, db);
+    await forceUpdate(token, db);
     res.sendStatus(200);
   } catch (error){
     res.status(500).json({ error: 'Failed to insert tracks' });
@@ -106,19 +107,7 @@ app.get('/api/track/:id', async (req, res) => {
 // Route to get spotify album cover URL and song preview URL
 app.get('/api/spotify/:trackId', async (req, res) => {
   const trackId = req.params.trackId;
-  const accessToken = token;
 
-  /*
-  // Check if cache has the trackId data already
-  if (cache.has(trackId)) {
-    const cachedData = cache.get(trackId);
-    if (Date.now() - cachedData.timestamp < CACHE_DURATION) {
-      return res.json(cachedData.data);
-    } else {
-      cache.delete(trackId);
-    }
-  }
-  */
   // API call to spotify to get album coverURL and song preview URL
   try {
     console.log(`Fetching Spotify data for trackId: ${trackId}`);
@@ -136,6 +125,22 @@ app.get('/api/spotify/:trackId', async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+app.get('/analyze', async(req, res) => {
+  const data = await getPlaylistTracks("37i9dQZEVXbLRQDuF5jeBp", token);
+  //const data = await fetchArtistGenre(token, "74KM79TiuVKeVCqs8QtB0B");
+
+  res.json(data);
+});
+
+app.get('/genres', async(req, res) => {
+  const db = mongodb.getDb();
+
+  const genres = await mongodb.getGenresByCountry(db, 'USA');
+
+  console.log(genres);
+  res.json(genres);
+})
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

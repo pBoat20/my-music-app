@@ -87,11 +87,56 @@ async function isCollectionEmpty(mongodb, country) {
 async function getTracksByCountry(mongodb, country){
   const collection = mongodb.collection(country);
 
-  const tracks = await collection.find({}, {projection: { track_name: 1, artist_names: 1, spotify_track_id: 1, album_cover_url: 1, preview_url: 1, _id: 0 } }).toArray();
+  const tracks = await collection.find({}, {projection: { track_name: 1, artist_names: 1, spotify_track_id: 1, album_cover_url: 1, preview_url: 1, track_url: 1, _id: 0 } }).toArray();
   //console.log(tracks);
 
   return tracks;
 }
+
+async function getGenresByCountry(mongodb, country) {
+  const collection = mongodb.collection(country);
+
+  const count = await collection.countDocuments();
+  console.log(`Number of documents in ${country} collection:`, count);
+
+  const genresCursor = await collection.find({}, { projection: { artist_genres: 1, _id: 0 } });
+  const genreCounts = {};
+
+  await genresCursor.forEach(doc => {
+    if (Array.isArray(doc.artist_genres)) {
+      doc.artist_genres.forEach(genreString => {
+        const genres = genreString.split(',').map(genre => genre.trim());
+        genres.forEach(genre => {
+          if (genreCounts[genre]) {
+            genreCounts[genre]++;
+          } else {
+            genreCounts[genre] = 1;
+          }
+        });
+      });
+    } else if (typeof doc.artist_genres === 'string') {
+      const genres = doc.artist_genres.split(',').map(genre => genre.trim());
+      genres.forEach(genre => {
+        if (genreCounts[genre]) {
+          genreCounts[genre]++;
+        } else {
+          genreCounts[genre] = 1;
+        }
+      });
+    }
+  });
+
+  // Convert the genreCounts object to an array and sort by count in descending order
+  const sortedGenres = Object.entries(genreCounts)
+    .sort(([, countA], [, countB]) => countB - countA)
+    .map(([genre, count]) => ({ genre, count }));
+
+  return sortedGenres;
+}
+
+
+
+
 
 async function getAvailableCountries(mongodb){
   const collections = await mongodb.listCollections().toArray();
@@ -107,5 +152,6 @@ module.exports = {
     replaceTracks,
     isCollectionEmpty,
     getTracksByCountry,
-    getAvailableCountries
+    getAvailableCountries,
+    getGenresByCountry
 }

@@ -11,36 +11,49 @@ const countries = ['Global', 'USA', 'Canada', 'Japan', 'Mexico', 'Brazil', 'Fran
 'Bolivia', 'Egypt', 'Malaysia'];
 
 async function loadDb(token, db) {
+    const now = new Date();
+    const dateEntered = now.toDateString();
+    
     for(let country of countries){
-        const countryPlaylist = `Top 50 - ${country}`;
-        const playlistId = await searchForPlaylists(countryPlaylist, token);
-        var tracks = '';
-
-        if(playlistId) {
-            tracks = await getPlaylistTracks(playlistId, token);    
-        }
-
         //comparing timestamps to prevent adding extra data
         const oldTimestamp = await mongodb.checkTimeStamps(db, country);
-        const newTimestamp = tracks[0].date_entered;
+        //const newTimestamp = tracks[0].date_entered;
 
-        if(oldTimestamp != newTimestamp){
-            let isEmpty = await mongodb.isCollectionEmpty(db, country);
-            // If the collection is empty, then use the insertTracks function, if not use replaceTracks
-            if(isEmpty){
-                await mongodb.insertTracks(db, country, tracks);
-            } else {
-                await mongodb.replaceTracks(db, country, tracks);
+        try{
+            if(oldTimestamp != now){
+                const countryPlaylist = `Top 50 - ${country}`;
+                const playlistId = await searchForPlaylists(countryPlaylist, token);
+                var tracks = '';
+
+                if(playlistId) {
+                    tracks = await getPlaylistTracks(playlistId, token);    
+                }
+
+                let isEmpty = await mongodb.isCollectionEmpty(db, country);
+                // If the collection is empty, then use the insertTracks function, if not use replaceTracks
+                if(isEmpty){
+                    await mongodb.insertTracks(db, country, tracks);
+                } else {
+                    await mongodb.replaceTracks(db, country, tracks);
+                }
             }
-        }
-        else{
-            console.log("%s is up to date", country);
-            continue;
+            else{
+                console.log("%s is up to date", country);
+                continue;
+            }
+        } catch(error){
+            if (error.response) {
+                if (error.response.status === 429) {
+                    console.error('Rate limit exceeded. Please try again later.');
+                    
+                    break;
+                }
+            }
         }
     }
 }
 
-async function rawUpdate(token, db){
+async function forceUpdate(token, db){
     const collections = await mongodb.getAvailableCountries(db);
     console.log(collections);
 
@@ -67,5 +80,5 @@ async function rawUpdate(token, db){
 
 module.exports = {
     loadDb,
-    rawUpdate
+    forceUpdate
 }

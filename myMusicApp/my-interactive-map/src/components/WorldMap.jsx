@@ -4,6 +4,8 @@ import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
 import '../styles/styles.css'
 import CountryInfo from './CountryInfo';
+import CountrySearchBar from './CountrySearchBar';
+import SearchControl from './SearchControl';
 
 // Changes the name of United States to USA for api use
 const freedomCatcher = {
@@ -175,6 +177,22 @@ const WorldMap = () => {
     };
   };
 
+  const handleCountrySelect = (countryName) => {
+    setCountryInfo({ name: countryName });
+    axios.get(`/api/top-tracks/${countryName}`)
+      .then((response) => {
+        setCountryInfo(prevState => ({
+          ...prevState,
+          tracks: response.data,
+        }));
+        setLoading(false);
+      })
+      .catch((error) => {
+        setError(error.message);
+        setLoading(false);
+      });
+  };
+
   return (
     <div className="flex h-screen w-screen">
       <div className = "w-1/3 h-screen overflow-y-auto">
@@ -187,6 +205,16 @@ const WorldMap = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
+            <div
+              style={{
+              position: 'absolute',
+              top: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              }}>
+              <CountrySearchBar countries={ specialCountries } onSelectCountry={ handleCountrySelect } />
+            </div>
             <GeoJSON data={geoData} onEachFeature={onEachCountry} style={countryStyle} ref={geoJsonRef} />
             <CustomButton />
           </MapContainer>
